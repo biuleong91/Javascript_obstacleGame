@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Rocket game</title>
+    <script src="jquery-3.1.0.min.js" type="text/javascript"></script>
+    <script>
+    $(function() {
+        var $body = $("body"),
+            $stage = $("#stage"),
+            $player = $("#player"),
+            $score = $("#score"),
+            obstacles_gap = 300,
+            obstacles_num = 1,
+            obstacles_falling_speed = 2,
+            player_obstacles_dist = 40,
+            score = 0,
+            score_add = 1,
+            run,
+            speedup,
+
+            c = console;
+
+        function initGame() {
+            run = setInterval(run_func, 1000 / 60);
+            speedup = setInterval(speedup_func, 1000);
+            init_player_position();
+            $body.click(click_left_action);
+            $body.contextmenu(click_right_action);
+            generateObstacles();
+        }
+
+        function endGame() {
+            obstacles_num = 1,
+                obstacles_falling_speed = 2,
+                score = 0,
+                score_add = 1;
+
+            $stage.append("<div id='gameover'>Retry</div>");
+            var $gameover = $("#gameover");
+            clearInterval(run);
+            clearInterval(speedup);
+
+            $gameover.css({
+                "background": "black",
+                "opacity": "0.7",
+                "width": "100%",
+                "height": "100%",
+                "position": "relative",
+                "color": "white",
+                "line-height": "650px",
+                "text-align": "center",
+                "font-size": "35px"
+            })
+
+            $body.unbind("click");
+            $body.unbind("contextmenu");
+
+            $gameover.click(function() {
+                $stage.find(".obstacle").remove();
+                $gameover.remove();
+
+                initGame();
+            });
+
+        }
+
+        initGame();
+
+        //initialise player's position
+        function init_player_position() {
+            $player.css("left", ($stage.width() - $player.width()) / 2 + "px");
+            $player.css("top", $stage.height() - $player.width() + "px");
+
+            //initialise score's position
+            $score.css("left", ($stage.width()) - ($score.width()) - 5 + "px");
+            $score.css("top", "5px");
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(min + Math.random() * (max - min + 1));
+        }
+
+        //left click move
+        function click_left_action() {
+            var x = parseInt($player.css("left"));
+            if (x > 35)
+                $player.css("left", x - 100 + "px");
+        }
+
+        //right click move
+        function click_right_action(e) {
+            e.preventDefault();
+            var x = parseInt($player.css("left"));
+            if (x < 235)
+                $player.css("left", x + 100 + "px");
+        }
+
+        //generate obstacles
+        function generateObstacles() {
+            var obstacle_pos = [35, 135, 235];
+            for (var i = 0; i < getRandomInt(1, 2); i++) {
+                $stage.append("<div class='sprite obstacle'></div>");
+                var $obstacle = $stage.find(".obstacle:last");
+                $obstacle.data("num", obstacles_num); //mark the last obstacle with a number
+                $obstacle.css("left", obstacle_pos.splice(getRandomInt(0, obstacle_pos.length - 1), 1) + "px");
+                $obstacle.css("top", -($obstacle.height()) + "px");
+            }
+        }
+
+        //timer for obstacles' moving
+        //$() is the jQuery constructor function.
+        //this is a reference to the DOM element of invocation.
+        function run_func() {
+            $stage.find(".obstacle").each(function() {
+                var $obstacle_y = parseInt($(this).css("top"));
+                // c.log("1: %s(%d,%d), 2: %s($o,%d)",$obstacle_y > obstacles_gap,$obstacle_y,obstacles_gap,$(this).data("num")==obstacles_num,$(this).data("num"),obstacles_num);
+
+                //Determining the last obstacle_y is more than the given gap and it is with the newest obstacles_num
+                if ($obstacle_y > obstacles_gap && $(this).data("num") == obstacles_num) {
+                    obstacles_num++;
+                    generateObstacles();
+                }
+                var play_x = parseInt($player.css("left")) + $player.width() / 2;
+                var play_y = parseInt($player.css("top")) + $player.height() / 2;
+                var obstacle_x = parseInt($(this).css("left")) + $(this).width() / 2;
+                var obstacle_y = parseInt($(this).css("top")) + $(this).height() / 2;
+
+                if (player_obstacles_dist > Math.sqrt(Math.pow((play_x - obstacle_x), 2) + Math.pow((play_y - obstacle_y), 2))) {
+                    endGame();
+                }
+
+                //Eliminate obstacles when the obstacles fall outside the stage and add score
+                if ($obstacle_y > $stage.height()) {
+                    $(this).remove();
+                    score = score + score_add;
+                    var int_score = Math.round(score);
+                    $score.html(int_score);
+                    return;
+                }
+                $(this).css("top", $obstacle_y + obstacles_falling_speed + "px");
+            });
+
+        }
+
+        function speedup_func() {
+            if (obstacles_falling_speed < 12) {
+                obstacles_falling_speed += 0.8;
+                score_add = score_add * 1.1;
+            } else {
+                clearInterval(speedup_func);
+                obstacles_falling_speed = 12;
+            }
+        }
+
+
+    });
+    </script>
+    <style type="text/css">
+    body {
+        text-align: center;
+    }
+    
+    #stage {
+        text-align: left;
+        top: 50px;
+        width: 350px;
+        height: 700px;
+        display: inline-block;
+        position: relative;
+        background: black;
+        background-image: url(background.jpeg);
+        overflow: hidden;
+    }
+    
+    .sprite {
+        display: inline-block;
+        position: absolute;
+        width: 80px;
+        height: 80px;
+    }
+    
+    .player {
+        background: url(player.jpg);
+    }
+    
+    .obstacle {
+        background: url(obstacle.jpg);
+    }
+    
+    .score {
+        color: white;
+        font-weight: bolder;
+        width: 100%;
+        height: auto;
+        text-align: right;
+        z-index: 99;
+    }
+    </style>
+</head>
+
+<body>
+    <div id="stage">
+        <div id="score" class="sprite score">00000</div>
+        <div id="player" class="sprite player"></div>
+    </div>
+</body>
+
+</html>
