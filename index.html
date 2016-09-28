@@ -4,6 +4,7 @@
 <head>
     <title>Rocket game</title>
     <script src="jquery-3.1.0.min.js" type="text/javascript"></script>
+    <script src="soundmanager2-jsmin.js"></script>
     <script>
     $(function() {
         var $body = $("body"),
@@ -21,23 +22,69 @@
 
             c = console;
 
+        var backgound_music = {
+
+            stop: function() {
+                mySound.stop();
+            }
+        };
+
+        function background_music() {
+            var mySound;
+            soundManager.setup({
+                onready: function() {
+                    mySound = soundManager.createSound({
+                        id: 'aSound',
+                        url: 'If_I_Had_a_Chicken.mp3'
+                    });
+                    mySound.play();
+                },
+            });
+
+            function stop() {
+                mySound.stop();
+            }
+            background_music.stop = stop;
+
+        }
+
         function initGame() {
+
+        	//start the background music
+            background_music();
+
+            //set timers for generating new obstacles and add speedup for falling
             run = setInterval(run_func, 1000 / 60);
             speedup = setInterval(speedup_func, 1000);
+
+            //initialise player position
             init_player_position();
+
+            //set the default score to zero, at the corner of the stage
+            $score.html("0");
+
+            //launch the right click and left click as the player's moving
             $body.click(click_left_action);
             $body.contextmenu(click_right_action);
+
+            //generate the first obstacles
             generateObstacles();
         }
 
+        	//end the game when collision happens
         function endGame() {
-            obstacles_num = 1,
-                obstacles_falling_speed = 2,
-                score = 0,
-                score_add = 1;
 
+        	//set those parameters as default value
+            obstacles_num = 1;
+            obstacles_falling_speed = 2;
+            score = 0;
+            score_add = 1;
+
+            //display the retry scrren
             $stage.append("<div id='gameover'>Retry</div>");
             var $gameover = $("#gameover");
+
+            //clear timers
             clearInterval(run);
             clearInterval(speedup);
 
@@ -51,20 +98,25 @@
                 "line-height": "650px",
                 "text-align": "center",
                 "font-size": "35px"
-            })
+            });
 
+            //Stop the background music
+            background_music.stop();
+
+            //disable click events
             $body.unbind("click");
             $body.unbind("contextmenu");
 
+            //remove all the obstacles and retry screen from the stage, and restart the game by calling initGame()
             $gameover.click(function() {
                 $stage.find(".obstacle").remove();
                 $gameover.remove();
-
                 initGame();
             });
 
         }
 
+        //start game
         initGame();
 
         //initialise player's position
@@ -181,6 +233,7 @@
     }
     
     .player {
+    	position: absolute;
         background: url(player.jpg);
     }
     
@@ -201,7 +254,7 @@
 
 <body>
     <div id="stage">
-        <div id="score" class="sprite score">00000</div>
+        <div id="score" class="sprite score">0</div>
         <div id="player" class="sprite player"></div>
     </div>
 </body>
