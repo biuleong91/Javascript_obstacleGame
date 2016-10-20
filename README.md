@@ -1,1 +1,1 @@
-# Javascript_obstacleGame
+A simple game to help me practicing JavaScript
